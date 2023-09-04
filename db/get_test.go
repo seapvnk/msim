@@ -9,12 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Test LocalDB
+// Test Get
+// TODO: Test for each environment
 func TestLocalDB(t *testing.T) {
 	t.Run("Should return *gorm.DB instance when database exists", func(t *testing.T) {
 		setupCreateDatabaseFile()
 	
-		result, _ := LocalDB()
+		result, _ := Get()
 		resultType := reflect.TypeOf(result)
 		expectedType := reflect.TypeOf((*gorm.DB)(nil))
 	
@@ -27,25 +28,12 @@ func TestLocalDB(t *testing.T) {
 	})
 
 	t.Run("Should return error when database doesnt exists", func(t *testing.T) {
-		_, err := LocalDB()
+		_, err := Get()
 
 		if err == nil {
 			t.Fatal("LocalDB() expects error when theres no database")
 		}
 	
-		afterEach()
-	})
-}
-
-// Test LocalDBSetup
-func TestLocalDBSetup(t *testing.T) {
-	t.Run("Should setup environment for local database", func (t *testing.T) {
-		result := LocalDBSetup()
-
-		if result != nil {
-			t.Fatal("LocalDBSetup() must create database file without errors")
-		}
-
 		afterEach()
 	})
 }
