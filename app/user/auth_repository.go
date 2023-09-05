@@ -26,23 +26,31 @@ func createAuth(userId uint) (string, error) {
 
 // Check if authenticate code is active,
 // if is active return userId, otherwise returns an error.
-func getAuthUser(code string) (uint, error) {
+func getAuthUser(code string) (*UserEntity, error) {
 	DB := db.ORM()
-
-	inTime := time.Now().Add(-20 * time.Minute)
 	
-	var model Auth
-	result := DB.Where("code = ? AND created_at >= ?", code, inTime).First(&model)
+	query := `
+		SELECT user.* FROM users as user 
+		LEFT JOIN auths as auth
+			ON user.id = auth.user_id
+		WHERE auth.code = ? AND auth.created_at >= ?
+		ORDER BY auth.created_at DESC
+		LIMIT 1
+	`
+		
+	var model User
+	inTime := time.Now().Add(-20 * time.Minute)
+	result := DB.Raw(query, code, inTime).First(&model)
 
 	if result.Error != nil {
-		return 0, result.Error
+		return nil, result.Error
 	}
 
-	return model.UserID, nil
+	return &UserEntity{ID: model.ID, Name: model.Name}, nil
 }
 
 // Generate a random string of a specified length
-func generateRandomString(length int) string {
+func generateRandomString(length uint) string {
 	rand.Seed(time.Now().UnixNano())
 
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

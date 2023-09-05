@@ -43,14 +43,13 @@ func Login(name, password string) (string, error) {
 
 // Return authenticated user by authentication code.
 func AuthUser(code string) (*UserEntity, error) {
-	userId, err := getAuthUser(code)
-	if err != nil || userId == 0 {
+	user, err := getAuthUser(code)
+	if err != nil || user == nil {
 		return nil, errors.New("Expired token")
 	}
 
-	return getById(userId)
+	return user, nil
 }
-
 
 // Create a new User.
 func new(name, passwd string) (*UserEntity, error) {

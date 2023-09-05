@@ -12,7 +12,7 @@ import (
 // Test create
 func TestCreate(t *testing.T) {
 	t.Run("Should create an user and return an user entity", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 		DB := db.ORM()
 	
 		result, _ := create(&UserEntity{Name: "test", password: "12345"})
@@ -33,14 +33,14 @@ func TestCreate(t *testing.T) {
 			t.Fatalf(errFormated, countUsers)
 		}
 	
-		teardown()
+		teardownUserRepo()
 	})
 }
 
 // Test getAll
 func TestGetAll(t *testing.T) {
 	t.Run("Should get all users when theres users", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 		DB := db.ORM()
 	
 		DB.Create(&User{Name: "test1", Password: "12345"})
@@ -68,11 +68,11 @@ func TestGetAll(t *testing.T) {
 			t.Fatal("Users should match")
 		}
 		
-		teardown()
+		teardownUserRepo()
 	})
 
 	t.Run("Should get an empty array when theres no user", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 
 		result, err := getAll()
 
@@ -89,17 +89,17 @@ func TestGetAll(t *testing.T) {
 		}
 
 		if len(result) != 0 {
-			t.Fatal("Should return the only 2 created users")
+			t.Fatal("Should return zero users")
 		}
 		
-		teardown()
+		teardownUserRepo()
 	})
 }
 
 // Test getById
 func TestGetById(t *testing.T) {
 	t.Run("Should get an user by id when exists", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 		DB := db.ORM()
 	
 		created := User{Name: "test1", Password: "12345"} 
@@ -123,11 +123,11 @@ func TestGetById(t *testing.T) {
 			t.Fatal("User name should match should match")
 		}
 		
-		teardown()
+		teardownUserRepo()
 	})
 
 	t.Run("Should not get an user by id when doesnt exists", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 		result, err := getById(1)
 
 		if err == nil {
@@ -138,14 +138,14 @@ func TestGetById(t *testing.T) {
 			t.Fatal("User should be nil")
 		}
 		
-		teardown()
+		teardownUserRepo()
 	})
 }
 
 // Test getByName
 func TestGetByName(t *testing.T) {
 	t.Run("Should get an user by name when exists", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 		DB := db.ORM()
 	
 		created := User{Name: "test1", Password: "12345"} 
@@ -170,11 +170,11 @@ func TestGetByName(t *testing.T) {
 			t.Fatal("User name should match should match")
 		}
 		
-		teardown()
+		teardownUserRepo()
 	})
 
 	t.Run("Should not get an user by name when doesnt exists", func(t *testing.T) {
-		setup()
+		setupUserRepo()
 		result, err := getByName("Test2")
 
 		if err == nil {
@@ -185,12 +185,12 @@ func TestGetByName(t *testing.T) {
 			t.Fatal("User should be nil")
 		}
 		
-		teardown()
+		teardownUserRepo()
 	})
 }
 
 // Runs after each tests
-func teardown() {
+func teardownUserRepo() {
 	folder := "storage"
 
 	err := os.RemoveAll(folder)
@@ -202,7 +202,7 @@ func teardown() {
 }
 
 // Setup environment for test
-func setup() {
+func setupUserRepo() {
 	if err := os.Mkdir("storage", os.ModePerm); err != nil {
 		panic("Error creating storage folder")
 	}
