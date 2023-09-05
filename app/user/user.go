@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type UserEntity struct {
@@ -15,9 +14,9 @@ type UserEntity struct {
 
 // Register user with a password.
 func Register(name, password string) (*UserEntity, error) {
-	user, err := New(name, password)
+	user, err := new(name, password)
 	if err != nil {
-		return create(&user)
+		return create(user)
 	}
 
 	return nil, err
@@ -28,11 +27,11 @@ func Register(name, password string) (*UserEntity, error) {
 func Login(name, password string) (string, error) {
 	user, err := getByName(name)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if !user.verifyPassword(password) {
-		return nil, err
+		return "", err
 	}
 
 	if code, err := createAuth(user.ID); err == nil {
@@ -59,7 +58,7 @@ func new(name, passwd string) (*UserEntity, error) {
 		return nil, err
 	}
 
-	return &UserEntity{Name: name, password: passwd}
+	return &UserEntity{Name: name, password: passwd}, nil
 }
 
 // Validade new User.

@@ -1,7 +1,9 @@
-package config
+package setup
+
+import "msim/config"
 
 // Setup the application for running
-func Setup(environment) {
+func Setup(environment config.Environment) {
 
 }
 

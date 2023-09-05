@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"errors"
 
 	"gorm.io/gorm"
@@ -14,11 +15,12 @@ type User struct {
 	Password string
 }
 
-const DB = db.Get()
-
+// Create an user in database
 func create(u *UserEntity) (*UserEntity, error) {
+	DB := db.ORM()
+
 	cost := bcrypt.DefaultCost
-	bytePassword := []byte(password)
+	bytePassword := []byte(u.password)
 	hashPasswordByte, err := bcrypt.GenerateFromPassword(bytePassword, cost)
 
 	if err != nil {
@@ -28,52 +30,60 @@ func create(u *UserEntity) (*UserEntity, error) {
 	}
 
 	hashPassword := string(hashPasswordByte)
-	userModel := DB.Create(&User{Name: name, password: hashPassword})
+	userModel := &User{Name: u.Name, Password: hashPassword}
+	result := DB.Create(&userModel)
 
-	if userModel.Error != nil {
-		fmt.Println(userModel.Error)
-		return nil, userModel.Error
+	if result.Error != nil {
+		fmt.Println(result.Error)
+		return nil, result.Error
 	}
 
-	return &User{ID: userModel.ID, Name: name}, nil
+	return &UserEntity{ID: userModel.ID, Name: userModel.Name}, nil
 }
 
-func getAll(db *gorm.DB) (*UserEntity[], error) {
+// Get all users in database
+func getAll() ([]*UserEntity, error) {
+	DB := db.ORM()
+
 	var (
 		userModels	[]User
-		users		[]UserEntity
+		users		[]*UserEntity
 	)
 
 	result := DB.Find(&userModels)
 
 	if result.Error != nil {
-		return [], result.Error
+		empty := []*UserEntity{}
+		return empty, result.Error
 	}
 
-	for _, model := range result {
-		users = append(users, &UserEntity{ID: mode.ID, Name: model.name})
+	for _, model := range userModels {
+		users = append(users, &UserEntity{ID: model.ID, Name: model.Name})
 	}
 
 	return users, nil
 }
 
+// Get an user by id
 func getById(id uint) (*UserEntity, error) {
-	result := DB.First(&UserModel{ID: id})
+	var model User
+	
+	result := db.ORM().Where("id = ?", id).First(&model)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	user := &UserEntity{ID: result.ID, Name: result.Name}
-	return user, nil
+	return &UserEntity{ID: model.ID, Name: model.Name}, nil
 }
 
+// Get an user by name
 func getByName(name string) (*UserEntity, error) {
-	result := DB.Where("name = ?", name).First(&User{})
+	var model User
 
+	result := db.ORM().Where("name = ?", name).First(&model)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	user := &UserEntity{ID: result.ID, Name: result.Name}
-	return user, nil
+	return &UserEntity{ID: model.ID, Name: model.Name}, nil
 }

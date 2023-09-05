@@ -1,12 +1,10 @@
 package user
 
 import (
-	"errors"
 	"math/rand"
     "time"
 
 	"gorm.io/gorm"
-	"golang.org/x/crypto/bcrypt"
 	"msim/db"
 )
 
@@ -17,27 +15,30 @@ type Auth struct {
 	User	User
 }
 
-const DB = db.Get()
-
 // Create authentication token 
 func createAuth(userId uint) (string, error) {
+	DB := db.ORM()
 	code := generateRandomString(10)
-	_, err := DB.Create(&AuthModel{Code: code, UserID: userId})
+	result := DB.Create(&Auth{Code: code, UserID: userId})
 
-	return code, err
+	return code, result.Error
 }
 
 // Check if authenticate code is active,
 // if is active return userId, otherwise returns an error.
 func getAuthUser(code string) (uint, error) {
+	DB := db.ORM()
+
 	inTime := time.Now().Add(-20 * time.Minute)
-	result := DB.Where("code = ? AND created_at >= ?", code, inTime).First(&Auth{})
+	
+	var model Auth
+	result := DB.Where("code = ? AND created_at >= ?", code, inTime).First(&model)
 
 	if result.Error != nil {
 		return 0, result.Error
 	}
 
-	return result.UserID, nil
+	return model.UserID, nil
 }
 
 // Generate a random string of a specified length
