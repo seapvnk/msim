@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ import (
 
 // Test LocalDB
 func TestLocalDB(t *testing.T) {
-	t.Run("Should return *gorm.DB instance when database Exists", func(t *testing.T) {
-		setupCreateDatabaseFile()
+	t.Run("Should return *gorm.DB instance when database exists", func(t *testing.T) {
+		setupLocal()
 	
 		result, _ := LocalDB()
 		resultType := reflect.TypeOf(result)
@@ -23,7 +23,7 @@ func TestLocalDB(t *testing.T) {
 			t.Fatalf(errFormated, resultType, expectedType)
 		}
 	
-		afterEach()
+		teardownLocal()
 	})
 
 	t.Run("Should return error when database doesnt exists", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestLocalDB(t *testing.T) {
 			t.Fatal("LocalDB() expects error when theres no database")
 		}
 	
-		afterEach()
+		teardownLocal()
 	})
 }
 
@@ -46,12 +46,12 @@ func TestLocalDBSetup(t *testing.T) {
 			t.Fatal("LocalDBSetup() must create database file without errors")
 		}
 
-		afterEach()
+		teardownLocal()
 	})
 }
 
 // Runs after each tests
-func afterEach() {
+func teardownLocal() {
 	folder := "storage"
 
 	err := os.RemoveAll(folder)
@@ -63,7 +63,7 @@ func afterEach() {
 }
 
 // Create database file for tests
-func setupCreateDatabaseFile() {
+func setupLocal() {
 	if err := os.Mkdir("storage", os.ModePerm); err != nil {
 		panic("Error creating storage folder")
 	}

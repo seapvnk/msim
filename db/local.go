@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"os"
@@ -15,7 +15,8 @@ const databaseFilename = "db.sqlite"
 // Get ORM instance
 func LocalDB() (*gorm.DB, error) {
 	filePath := fmt.Sprintf("%s/%s", storageFilename, databaseFilename)
-	db, err := gorm.Open(sqlite.Open(filePath), &gorm.Config{})
+	pathWithForeignKeyArgs := fmt.Sprintf("%s?_foreign_keys=on", filePath)
+	db, err := gorm.Open(sqlite.Open(pathWithForeignKeyArgs), &gorm.Config{})
 
 	if err != nil {
 		fmt.Println("Error openning local database")
