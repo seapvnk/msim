@@ -16,36 +16,39 @@ type UserEntity struct {
 func Register(name, password string) (*UserEntity, error) {
 	user, err := new(name, password)
 	if err != nil {
-		return create(user)
+		return nil, err
 	}
 
-	return nil, err
+	return create(user)
 }
 
 // Login user, if user exists and password is correct 
 // return the authentication token.
 func Login(name, password string) (string, error) {
 	user, err := getByName(name)
+
 	if err != nil {
 		return "", err
 	}
 
 	if !user.verifyPassword(password) {
-		return "", err
+		return "", errors.New("Incorrect password")
 	}
 
-	if code, err := createAuth(user.ID); err == nil {
-		return code, nil
+	code, err := createAuth(user.ID)
+	
+	if err != nil {
+		return "", errors.New("Internal application error")
 	}
 	
-	return "", errors.New("Internal application error")
+	return code, nil
 }
 
 // Return authenticated user by authentication code.
 func AuthUser(code string) (*UserEntity, error) {
 	user, err := getAuthUser(code)
-	if err != nil || user == nil {
-		return nil, errors.New("Expired token")
+	if err != nil || user.ID == 0 {
+		return nil, errors.New("Expired token or doesnt exists")
 	}
 
 	return user, nil
@@ -57,7 +60,16 @@ func new(name, passwd string) (*UserEntity, error) {
 		return nil, err
 	}
 
-	return &UserEntity{Name: name, password: passwd}, nil
+	cost := bcrypt.DefaultCost
+	bytePassword := []byte(passwd)
+	hashPasswordByte, err := bcrypt.GenerateFromPassword(bytePassword, cost)
+
+	if err != nil {
+		errorMessage := "Error generating hash for password"
+		return nil, errors.New(errorMessage)
+	}
+
+	return &UserEntity{Name: name, password: string(hashPasswordByte)}, nil
 }
 
 // Validade new User.
@@ -76,5 +88,5 @@ func validateNew(name, password string) error {
 // Verify user password.
 func (u *UserEntity) verifyPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.password), []byte(password))
-	return err != nil
+	return err == nil
 }

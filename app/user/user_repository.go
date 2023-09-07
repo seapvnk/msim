@@ -2,10 +2,8 @@ package user
 
 import (
 	"fmt"
-	"errors"
 
 	"gorm.io/gorm"
-	"golang.org/x/crypto/bcrypt"
 	"msim/db"
 )
 
@@ -19,18 +17,7 @@ type User struct {
 func create(u *UserEntity) (*UserEntity, error) {
 	DB := db.ORM()
 
-	cost := bcrypt.DefaultCost
-	bytePassword := []byte(u.password)
-	hashPasswordByte, err := bcrypt.GenerateFromPassword(bytePassword, cost)
-
-	if err != nil {
-		errorMessage := "Error generating hash for password"
-		fmt.Println(errorMessage)
-		return nil, errors.New(errorMessage)
-	}
-
-	hashPassword := string(hashPasswordByte)
-	userModel := &User{Name: u.Name, Password: hashPassword}
+	userModel := &User{Name: u.Name, Password: u.password}
 	result := DB.Create(&userModel)
 
 	if result.Error != nil {
@@ -85,5 +72,5 @@ func getByName(name string) (*UserEntity, error) {
 		return nil, result.Error
 	}
 
-	return &UserEntity{ID: model.ID, Name: model.Name}, nil
+	return &UserEntity{ID: model.ID, Name: model.Name, password: model.Password}, nil
 }
