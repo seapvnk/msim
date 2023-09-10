@@ -1,23 +1,20 @@
 package user
 
 import (
-	"os"
 	"testing"
-	"fmt"
 	"reflect"
 
+	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/google/uuid"
 	"msim/db"
 )
 
 // Test register
 func TestRegister(t *testing.T) {
 	t.Run("Should register an user", func(t *testing.T) {
-		setup()
-	
-		DB := db.ORM()
-
-		result, err := Register("Test", "passwd")
+		service, DB := CreateUserService()
+		result, err := service.Register(&UserAuthDTO{"Test", "passwd"})
 
 		if err != nil {
 			t.Fatal(err)
@@ -29,92 +26,79 @@ func TestRegister(t *testing.T) {
 		if find.Name != result.Name {
 			t.Fatal("Should create this exact model in database")
 		}
-	
-		teardown()
 	})
 }
 
 // Test login
 func TestLogin(t *testing.T) {
 	t.Run("Should login an user when exists and password match", func(t *testing.T) {
-		setup()
-	
-		DB := db.ORM()
+		service, DB := CreateUserService()
 
 		cost := bcrypt.DefaultCost
 		bytePassword := []byte("passwd")
-		hashPasswordByte, err := bcrypt.GenerateFromPassword(bytePassword, cost)
+		hashPasswordByte, _ := bcrypt.GenerateFromPassword(bytePassword, cost)
 		
-		userModel := &User{Name: "Test", Password: string(hashPasswordByte)}
+		userModel := &User{ID: uuid.New(), Name: "Test99", Password: string(hashPasswordByte)}
 		DB.Create(userModel)
 
-		result, err := Login("Test", "passwd")
+		result, ex := service.Login(&UserAuthDTO{"Test99", "passwd"})
 
-		if err != nil {
-			t.Fatal(err)
+		if ex != nil {
+			t.Fatal(ex)
 		}
 
-		if result == "" {
+		if result == uuid.Nil {
 			t.Fatal("Should return a code")
 		}
-	
-		teardown()
 	})
 
 	t.Run("Should not login an user when password doesnt match", func(t *testing.T) {
-		setup()
-	
-		DB := db.ORM()
+		service, DB := CreateUserService()
 
 		cost := bcrypt.DefaultCost
 		bytePassword := []byte("passwd")
-		hashPasswordByte, err := bcrypt.GenerateFromPassword(bytePassword, cost)
+		hashPasswordByte, _ := bcrypt.GenerateFromPassword(bytePassword, cost)
 		
-		userModel := &User{Name: "Test", Password: string(hashPasswordByte)}
+		userModel := &User{ID: uuid.New(), Name: "Test2", Password: string(hashPasswordByte)}
 		DB.Create(userModel)
 
-		result, err := Login("Test", "passwd1")
+		result, ex := service.Login(&UserAuthDTO{"Test", "passwd1"})
 
-		if err == nil {
-			t.Fatal(err)
+		if ex == nil {
+			t.Fatal(ex)
 		}
 
-		if result != "" {
+		if result != uuid.Nil {
 			t.Fatal("Should return a code")
 		}
-	
-		teardown()
 	})
 
 	t.Run("Should not login an user when doesnt exists", func(t *testing.T) {
-		setup()
-	
-		result, err := Login("Test", "passwd")
+		service, _ := CreateUserService()
+		result, err := service.Login(&UserAuthDTO{"Test", "passwd"})
 
 		if err == nil {
 			t.Fatal(err)
 		}
 
-		if result != "" {
+		if result != uuid.Nil {
 			t.Fatal("Should return a code")
 		}
-	
-		teardown()
 	})
 }
 
-// Test AuthUser
-func TestAuthUser(t *testing.T) {
+// Test GetAuthUser
+func TestGetAuthUserService(t *testing.T) {
 	t.Run("Should get auth user when theres one", func(t *testing.T) {
-		DB := db.ORM()
+		service, DB := CreateUserService()
 
-		createdUser := User{Name: "test1", Password: "12345"}
+		createdUser := User{ID: uuid.New(), Name: "test15", Password: "12345"}
 		DB.Create(&createdUser)
 		
-		createdAuth := Auth{Code: "ABCD", User: createdUser}
+		createdAuth := Auth{Code: uuid.New(), User: createdUser}
 		DB.Create(&createdAuth)
 
-		result, _ := AuthUser(createdAuth.Code)
+		result, _ := service.GetAuthUser(&AuthDTO{createdAuth.Code})
 
 		resultType := reflect.TypeOf(result)
 		expectedType := reflect.TypeOf((*UserEntity)(nil))
@@ -126,7 +110,8 @@ func TestAuthUser(t *testing.T) {
 	})
 
 	t.Run("Should not get auth user when doesnt have one", func(t *testing.T) {
-		result, err := AuthUser("ABCDE")
+		service, _ := CreateUserService()
+		result, err := service.GetAuthUser(&AuthDTO{uuid.New()})
 
 		if err == nil {
 			t.Fatal("Should throw error")
@@ -138,30 +123,10 @@ func TestAuthUser(t *testing.T) {
 	})
 }
 
-// Runs after each tests
-func teardown() {
-	folder := "storage"
+func CreateUserService() (*UserService, *gorm.DB) {
+	DB, _ := db.InMemoryDB()
+	Migrate(DB)
 
-	err := os.RemoveAll(folder)
-	if err != nil {
-		panic("Error excluding database folder")
-	} else {
-		fmt.Println("Folder excluded")
-	}
-}
-
-// Setup environment for test
-func setup() {
-	if err := os.Mkdir("storage", os.ModePerm); err != nil {
-		panic("Error creating storage folder")
-	}
-	fmt.Println("Storage folder created")
-
-	newFile, err := os.Create("storage/db.sqlite")
-	if err != nil {
-		panic("Error creating database file")
-	}
-	defer newFile.Close()
-
-	Migrate()
+	userRepo, authRepo := &UserRepository{db: DB}, &AuthRepository{db: DB}
+	return &UserService{userRepository: userRepo, authRepository: authRepo}, DB
 }

@@ -3,22 +3,30 @@ package user
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"msim/db"
 )
 
 type User struct {
 	gorm.Model
-	Name	 string `gorm:"unique"`
+	ID       uuid.UUID	`gorm:"type:uuid;primaryKey"`
+	Name	 string		`gorm:"unique"`
 	Password string
 }
 
-// Create an user in database
-func create(u *UserEntity) (*UserEntity, error) {
-	DB := db.ORM()
+type UserRepository struct {
+	db	*gorm.DB
+}
 
+// Create an UserRepository instance
+func (repository *UserRepository) New(database *gorm.DB) *UserRepository {
+	return &UserRepository{db: database}
+}
+
+// Create an user in database
+func (repository *UserRepository) Create(u *UserEntity) (*UserEntity, error) {
 	userModel := &User{Name: u.Name, Password: u.password}
-	result := DB.Create(&userModel)
+	result := repository.db.Create(&userModel)
 
 	if result.Error != nil {
 		fmt.Println(result.Error)
@@ -29,15 +37,13 @@ func create(u *UserEntity) (*UserEntity, error) {
 }
 
 // Get all users in database
-func getAll() ([]*UserEntity, error) {
-	DB := db.ORM()
-
+func (repository *UserRepository) GetAll() ([]*UserEntity, error) {
 	var (
 		userModels	[]User
 		users		[]*UserEntity
 	)
 
-	result := DB.Find(&userModels)
+	result := repository.db.Find(&userModels)
 
 	if result.Error != nil {
 		empty := []*UserEntity{}
@@ -52,10 +58,10 @@ func getAll() ([]*UserEntity, error) {
 }
 
 // Get an user by id
-func getById(id uint) (*UserEntity, error) {
+func (repository *UserRepository) GetById(id uuid.UUID) (*UserEntity, error) {
 	var model User
 	
-	result := db.ORM().Where("id = ?", id).First(&model)
+	result := repository.db.Where("id = ?", id).First(&model)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -64,10 +70,10 @@ func getById(id uint) (*UserEntity, error) {
 }
 
 // Get an user by name
-func getByName(name string) (*UserEntity, error) {
+func (repository *UserRepository) GetByName(name string) (*UserEntity, error) {
 	var model User
 
-	result := db.ORM().Where("name = ?", name).First(&model)
+	result := repository.db.Where("name = ?", name).First(&model)
 	if result.Error != nil {
 		return nil, result.Error
 	}

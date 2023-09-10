@@ -3,19 +3,18 @@ package user
 import (
 	"fmt"
 	"testing"
-	"os"
 	"reflect"
 
+	"gorm.io/gorm"
+	"github.com/google/uuid"
 	"msim/db"
 )
 
 // Test create
 func TestCreate(t *testing.T) {
 	t.Run("Should create an user and return an user entity", func(t *testing.T) {
-		setupUserRepo()
-		DB := db.ORM()
-	
-		result, _ := create(&UserEntity{Name: "test", password: "12345"})
+		repository, DB := CreateUserRepository()
+		result, _ := repository.Create(&UserEntity{Name: "test", password: "12345"})
 
 		resultType := reflect.TypeOf(result)
 		expectedType := reflect.TypeOf((*UserEntity)(nil))
@@ -32,21 +31,18 @@ func TestCreate(t *testing.T) {
 			errFormated := `created count returns %d, expects 1`
 			t.Fatalf(errFormated, countUsers)
 		}
-	
-		teardownUserRepo()
 	})
 }
 
 // Test getAll
 func TestGetAll(t *testing.T) {
 	t.Run("Should get all users when theres users", func(t *testing.T) {
-		setupUserRepo()
-		DB := db.ORM()
+		repository, DB := CreateUserRepository()
 	
-		DB.Create(&User{Name: "test1", Password: "12345"})
+		DB.Create(&User{ID: uuid.New(), Name: "Test", Password: "12345"})
 		DB.Create(&User{Name: "test2", Password: "12345"})
 
-		result, err := getAll()
+		result, err := repository.GetAll()
 
 		if err != nil {
 			t.Fatal(err)
@@ -67,14 +63,12 @@ func TestGetAll(t *testing.T) {
 		if result[0].Name != "test1" && result[1].Name != "test2" {
 			t.Fatal("Users should match")
 		}
-		
-		teardownUserRepo()
 	})
 
 	t.Run("Should get an empty array when theres no user", func(t *testing.T) {
-		setupUserRepo()
+		repository, _ := CreateUserRepository()
 
-		result, err := getAll()
+		result, err := repository.GetAll()
 
 		if err != nil {
 			t.Fatal(err)
@@ -91,21 +85,18 @@ func TestGetAll(t *testing.T) {
 		if len(result) != 0 {
 			t.Fatal("Should return zero users")
 		}
-		
-		teardownUserRepo()
 	})
 }
 
 // Test getById
 func TestGetById(t *testing.T) {
 	t.Run("Should get an user by id when exists", func(t *testing.T) {
-		setupUserRepo()
-		DB := db.ORM()
+		repository, DB := CreateUserRepository()
 	
-		created := User{Name: "test1", Password: "12345"} 
+		created := User{ID: uuid.New(), Name: "Testll", Password: "12345"} 
 		DB.Create(&created)
 
-		result, err := getById(created.ID)
+		result, err := repository.GetById(created.ID)
 
 		if err != nil {
 			t.Fatal(err)
@@ -122,13 +113,12 @@ func TestGetById(t *testing.T) {
 		if result.Name != created.Name {
 			t.Fatal("User name should match should match")
 		}
-		
-		teardownUserRepo()
 	})
 
 	t.Run("Should not get an user by id when doesnt exists", func(t *testing.T) {
-		setupUserRepo()
-		result, err := getById(1)
+		repository, _ := CreateUserRepository()
+
+		result, err := repository.GetById(uuid.New())
 
 		if err == nil {
 			t.Fatal("Should throw error")
@@ -137,21 +127,18 @@ func TestGetById(t *testing.T) {
 		if result != nil {
 			t.Fatal("User should be nil")
 		}
-		
-		teardownUserRepo()
 	})
 }
 
 // Test getByName
 func TestGetByName(t *testing.T) {
 	t.Run("Should get an user by name when exists", func(t *testing.T) {
-		setupUserRepo()
-		DB := db.ORM()
+		repository, DB := CreateUserRepository()
 	
-		created := User{Name: "test1", Password: "12345"} 
+		created := User{ID: uuid.New(), Name: "Test867", Password: "12345"} 
 		DB.Create(&created)
 
-		result, err := getByName(created.Name)
+		result, err := repository.GetByName(created.Name)
 		fmt.Println(result)
 
 		if err != nil {
@@ -169,13 +156,11 @@ func TestGetByName(t *testing.T) {
 		if result.Name != created.Name {
 			t.Fatal("User name should match should match")
 		}
-		
-		teardownUserRepo()
 	})
 
 	t.Run("Should not get an user by name when doesnt exists", func(t *testing.T) {
-		setupUserRepo()
-		result, err := getByName("Test2")
+		repository, _ := CreateUserRepository()
+		result, err := repository.GetByName("Test2")
 
 		if err == nil {
 			t.Fatal("Should throw error")
@@ -184,35 +169,12 @@ func TestGetByName(t *testing.T) {
 		if result != nil {
 			t.Fatal("User should be nil")
 		}
-		
-		teardownUserRepo()
 	})
 }
 
-// Runs after each tests
-func teardownUserRepo() {
-	folder := "storage"
+func CreateUserRepository() (*UserRepository, *gorm.DB) {
+	DB, _ := db.InMemoryDB()
+	Migrate(DB)
 
-	err := os.RemoveAll(folder)
-	if err != nil {
-		panic("Error excluding database folder")
-	} else {
-		fmt.Println("Folder excluded")
-	}
-}
-
-// Setup environment for test
-func setupUserRepo() {
-	if err := os.Mkdir("storage", os.ModePerm); err != nil {
-		panic("Error creating storage folder")
-	}
-	fmt.Println("Storage folder created")
-
-	newFile, err := os.Create("storage/db.sqlite")
-	if err != nil {
-		panic("Error creating database file")
-	}
-	defer newFile.Close()
-
-	Migrate()
+	return &UserRepository{db: DB}, DB
 }

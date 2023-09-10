@@ -12,7 +12,7 @@ import (
 const storageFilename = "storage"
 const databaseFilename = "db.sqlite"
 
-// Get ORM instance
+// Get ORM instance for local database
 func LocalDB() (*gorm.DB, error) {
 	filePath := fmt.Sprintf("%s/%s", storageFilename, databaseFilename)
 	pathWithForeignKeyArgs := fmt.Sprintf("%s?_foreign_keys=on", filePath)
