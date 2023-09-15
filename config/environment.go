@@ -3,7 +3,7 @@ package config
 type Environment string
 
 const (
-	Local	Environment = "local"
-	Server	Environment = "server"
-	Test	Environment	= "test"
+	Local  Environment = "local"
+	Server Environment = "server"
+	Test   Environment = "test"
 )

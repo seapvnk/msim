@@ -9,13 +9,13 @@ import (
 
 type User struct {
 	gorm.Model
-	ID       uuid.UUID	`gorm:"type:uuid;primaryKey"`
-	Name	 string		`gorm:"unique"`
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Name     string    `gorm:"unique"`
 	Password string
 }
 
 type UserRepository struct {
-	db	*gorm.DB
+	db *gorm.DB
 }
 
 // Create an UserRepository instance
@@ -25,7 +25,7 @@ func (repository *UserRepository) New(database *gorm.DB) *UserRepository {
 
 // Create an user in database
 func (repository *UserRepository) Create(u *UserEntity) (*UserEntity, error) {
-	userModel := &User{Name: u.Name, Password: u.password}
+	userModel := &User{ID: u.ID, Name: u.Name, Password: u.password}
 	result := repository.db.Create(&userModel)
 
 	if result.Error != nil {
@@ -33,14 +33,14 @@ func (repository *UserRepository) Create(u *UserEntity) (*UserEntity, error) {
 		return nil, result.Error
 	}
 
-	return &UserEntity{ID: userModel.ID, Name: userModel.Name}, nil
+	return u, nil
 }
 
 // Get all users in database
 func (repository *UserRepository) GetAll() ([]*UserEntity, error) {
 	var (
-		userModels	[]User
-		users		[]*UserEntity
+		userModels []User
+		users      []*UserEntity
 	)
 
 	result := repository.db.Find(&userModels)
@@ -60,7 +60,7 @@ func (repository *UserRepository) GetAll() ([]*UserEntity, error) {
 // Get an user by id
 func (repository *UserRepository) GetById(id uuid.UUID) (*UserEntity, error) {
 	var model User
-	
+
 	result := repository.db.Where("id = ?", id).First(&model)
 	if result.Error != nil {
 		return nil, result.Error

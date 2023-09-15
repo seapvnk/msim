@@ -1,23 +1,23 @@
 package user
 
 import (
-	"time"
 	"errors"
+	"time"
 
-	"gorm.io/gorm"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Auth struct {
 	gorm.Model
-	ID      uuid.UUID	`gorm:"type:uuid;primaryKey"`
-	Code	uuid.UUID
-	UserID	uuid.UUID
-	User	User
+	ID     uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Code   uuid.UUID
+	UserID uuid.UUID
+	User   User
 }
 
 type AuthRepository struct {
-	db	*gorm.DB
+	db *gorm.DB
 }
 
 // Create an AuthRepository instance.
@@ -37,7 +37,7 @@ func (repository *AuthRepository) Create(userId uuid.UUID) (uuid.UUID, error) {
 // if is active return userId, otherwise returns an error.
 func (repository *AuthRepository) GetAuthUser(code uuid.UUID) (*UserEntity, error) {
 	var models []User
-	
+
 	inTime := time.Now().Add(-20 * time.Minute)
 	result := repository.db.Raw(`
 		SELECT user.* FROM users as user 

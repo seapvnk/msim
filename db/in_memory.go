@@ -1,8 +1,8 @@
 package db
 
 import (
-	"gorm.io/gorm"
 	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // Get ORM instance for in-memory database
