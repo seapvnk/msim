@@ -2,9 +2,9 @@ package db
 
 import (
 	"fmt"
-	"testing"
 	"os"
 	"reflect"
+	"testing"
 
 	"gorm.io/gorm"
 )
@@ -13,16 +13,16 @@ import (
 func TestLocalDB(t *testing.T) {
 	t.Run("Should return *gorm.DB instance when database exists", func(t *testing.T) {
 		setupLocal()
-	
+
 		result, _ := LocalDB()
 		resultType := reflect.TypeOf(result)
 		expectedType := reflect.TypeOf((*gorm.DB)(nil))
-	
+
 		if resultType != expectedType {
 			errFormated := `LocalDB() returns type of %s, expects type of %s`
 			t.Fatalf(errFormated, resultType, expectedType)
 		}
-	
+
 		teardownLocal()
 	})
 
@@ -32,14 +32,14 @@ func TestLocalDB(t *testing.T) {
 		if err == nil {
 			t.Fatal("LocalDB() expects error when theres no database")
 		}
-	
+
 		teardownLocal()
 	})
 }
 
 // Test LocalDBSetup
 func TestLocalDBSetup(t *testing.T) {
-	t.Run("Should setup environment for local database", func (t *testing.T) {
+	t.Run("Should setup environment for local database", func(t *testing.T) {
 		result := LocalDBSetup()
 
 		if result != nil {

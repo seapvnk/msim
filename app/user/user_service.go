@@ -1,29 +1,44 @@
 package user
 
 import (
-	"golang.org/x/crypto/bcrypt"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"msim/app/shared"
 )
 
 type UserEntity struct {
-	ID 			uuid.UUID
-	Name 		string
-	password	string
+	ID       uuid.UUID
+	Name     string
+	password string
 }
 
-type UserAuthDTO struct {
-	Name		string
-	Password	string
+// Validade new User.
+func (u *UserEntity) validate() *shared.Exception {
+	if len(u.password) < 3 {
+		return shared.FormException(shared.MIN_LENGTH_EX, "password")
+	}
+
+	if len(u.Name) < 3 {
+		return shared.FormException(shared.MIN_LENGTH_EX, "name")
+	}
+
+	return nil
 }
 
-type AuthDTO struct {
-	Code uuid.UUID
+// Verify user password.
+func (u *UserEntity) verifyPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.password), []byte(password))
+	return err == nil
 }
 
 type UserService struct {
-	userRepository	*UserRepository
-	authRepository	*AuthRepository
+	userRepository *UserRepository
+	authRepository *AuthRepository
+}
+
+type UserAuthDTO struct {
+	Name     string
+	Password string
 }
 
 // Register user with a password.
@@ -37,11 +52,11 @@ func (service *UserService) Register(u *UserAuthDTO) (*UserEntity, *shared.Excep
 	if err != nil {
 		return nil, shared.DefaultException(shared.ALREADY_CREATED_EX, "user")
 	}
-	
+
 	return result, nil
 }
 
-// Login user, if user exists and password is correct 
+// Login user, if user exists and password is correct
 // return the authentication token.
 func (service *UserService) Login(u *UserAuthDTO) (uuid.UUID, *shared.Exception) {
 	user, err := service.userRepository.GetByName(u.Name)
@@ -58,8 +73,12 @@ func (service *UserService) Login(u *UserAuthDTO) (uuid.UUID, *shared.Exception)
 	if err != nil {
 		return uuid.Nil, shared.InternalErrorException()
 	}
-	
+
 	return code, nil
+}
+
+type AuthDTO struct {
+	Code uuid.UUID
 }
 
 // Return authenticated user by authentication code.
@@ -88,7 +107,7 @@ func new(name, passwd string) (*UserEntity, *shared.Exception) {
 	}
 
 	user.password = hashPassword
-	
+
 	return &user, nil
 }
 
@@ -101,23 +120,4 @@ func getPasswordHash(password string) (string, *shared.Exception) {
 	}
 
 	return "", shared.DefaultException(shared.UNKNOWN_EX, "Can't hash password")
-}
-
-// Validade new User.
-func (u *UserEntity) validate() *shared.Exception {
-	if len(u.password) < 3 {
-		return shared.FormException(shared.MIN_LENGTH_EX, "password")
-	}
-
-	if len(u.Name) < 3 {
-		return shared.FormException(shared.MIN_LENGTH_EX, "name")
-	}
-
-	return nil
-}
-
-// Verify user password.
-func (u *UserEntity) verifyPassword(password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(u.password), []byte(password))
-	return err == nil
 }

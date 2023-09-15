@@ -1,16 +1,16 @@
 package user
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 
-	"gorm.io/gorm"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 	"msim/db"
 )
 
-// Test register
+// Test register.
 func TestRegister(t *testing.T) {
 	t.Run("Should register an user", func(t *testing.T) {
 		service, DB := CreateUserService()
@@ -27,9 +27,24 @@ func TestRegister(t *testing.T) {
 			t.Fatal("Should create this exact model in database")
 		}
 	})
+
+	t.Run("Should not register an user when already exists", func(t *testing.T) {
+		service, DB := CreateUserService()
+
+		DB.Create(&User{Name: "Test", Password: "12345"})
+		result, err := service.Register(&UserAuthDTO{"Test", "passwd"})
+
+		if err == nil {
+			t.Fatal("Should not create an user")
+		}
+
+		if result != nil {
+			t.Fatal("Result should be nil")
+		}
+	})
 }
 
-// Test login
+// Test login.
 func TestLogin(t *testing.T) {
 	t.Run("Should login an user when exists and password match", func(t *testing.T) {
 		service, DB := CreateUserService()
@@ -37,7 +52,7 @@ func TestLogin(t *testing.T) {
 		cost := bcrypt.DefaultCost
 		bytePassword := []byte("passwd")
 		hashPasswordByte, _ := bcrypt.GenerateFromPassword(bytePassword, cost)
-		
+
 		userModel := &User{ID: uuid.New(), Name: "Test99", Password: string(hashPasswordByte)}
 		DB.Create(userModel)
 
@@ -58,7 +73,7 @@ func TestLogin(t *testing.T) {
 		cost := bcrypt.DefaultCost
 		bytePassword := []byte("passwd")
 		hashPasswordByte, _ := bcrypt.GenerateFromPassword(bytePassword, cost)
-		
+
 		userModel := &User{ID: uuid.New(), Name: "Test2", Password: string(hashPasswordByte)}
 		DB.Create(userModel)
 
@@ -87,14 +102,14 @@ func TestLogin(t *testing.T) {
 	})
 }
 
-// Test GetAuthUser
+// Test GetAuthUser.
 func TestGetAuthUserService(t *testing.T) {
 	t.Run("Should get auth user when theres one", func(t *testing.T) {
 		service, DB := CreateUserService()
 
 		createdUser := User{ID: uuid.New(), Name: "test15", Password: "12345"}
 		DB.Create(&createdUser)
-		
+
 		createdAuth := Auth{Code: uuid.New(), User: createdUser}
 		DB.Create(&createdAuth)
 
@@ -102,7 +117,7 @@ func TestGetAuthUserService(t *testing.T) {
 
 		resultType := reflect.TypeOf(result)
 		expectedType := reflect.TypeOf((*UserEntity)(nil))
-	
+
 		if resultType != expectedType {
 			errFormated := `create returns type of %s, expects type of %s`
 			t.Fatalf(errFormated, resultType, expectedType)
@@ -123,8 +138,11 @@ func TestGetAuthUserService(t *testing.T) {
 	})
 }
 
+// Create service and test database.
 func CreateUserService() (*UserService, *gorm.DB) {
 	DB, _ := db.InMemoryDB()
+
+	Drop(DB)
 	Migrate(DB)
 
 	userRepo, authRepo := &UserRepository{db: DB}, &AuthRepository{db: DB}

@@ -1,12 +1,12 @@
 package db
 
 import (
-	"os"
-	"fmt"
 	"errors"
+	"fmt"
+	"os"
 
-	"gorm.io/gorm"
 	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 const storageFilename = "storage"
