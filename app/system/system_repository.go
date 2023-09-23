@@ -20,7 +20,7 @@ type SystemRepository struct {
 }
 
 // Create a SystemRepository instance.
-func (repository *SystemRepository) New(database *gorm.DB) *SystemRepository {
+func NewSystemRepository(database *gorm.DB) *SystemRepository {
 	return &SystemRepository{db: database}
 }
 

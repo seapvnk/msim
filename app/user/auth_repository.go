@@ -21,7 +21,7 @@ type AuthRepository struct {
 }
 
 // Create an AuthRepository instance.
-func (repository *AuthRepository) New(database *gorm.DB) *AuthRepository {
+func NewAuthRepository(database *gorm.DB) *AuthRepository {
 	return &AuthRepository{db: database}
 }
 
